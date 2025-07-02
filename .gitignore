@@ -5,6 +5,7 @@
 *.tfstate
 *.tfstate.*
 *.iml
+*.terraform.lock.hcl
 
 # Crash log files
 crash.log
@@ -39,3 +40,6 @@ terraform.rc
 
 # Ignores IDE and editor specific files
 .idea/*
+
+# SSH Keys
+ssh_key*

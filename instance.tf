@@ -3,7 +3,10 @@ locals {
   user_data = templatefile("${path.module}/user_data.bash.template", {
     repo_url    = var.repo_url
     repo_tag    = var.repo_tag
-    elements_config_secret_name = aws_secretsmanager_secret.elements_config.name
+    base_url    = "https://${var.deployment_name}.${var.hosted_zone_name}"
+    logs_volume_id    = aws_ebs_volume.logs.id
+    repos_volume_id   = aws_ebs_volume.repos.id
+    db_data_volume_id = aws_ebs_volume.db_data.id
   })
 }
 
@@ -32,6 +35,7 @@ resource "aws_instance" "app_server" {
   ami = var.ami
   key_name = aws_key_pair.eks_ssh_key.id
   instance_type = var.instance_type
+  availability_zone = var.availability_zone
   vpc_security_group_ids = [aws_security_group.app_server.id]
 
   user_data = local.user_data
@@ -50,29 +54,7 @@ resource "aws_instance" "app_server" {
   }
 
   tags = {
-    Name = "${var.deployment_name}-${count.index}"
+    Name = "${var.deployment_name}.${var.hosted_zone_name}"
   }
 
-  lifecycle {
-    replace_triggered_by = [aws_secretsmanager_secret_version.elements_config]
-  }
-
-}
-
-resource "aws_volume_attachment" "db_data" {
-  device_name = "/dev/sdf"
-  volume_id   = aws_ebs_volume.db_data.id
-  instance_id = aws_instance.app_server.id
-}
-
-resource "aws_volume_attachment" "logs" {
-  device_name = "/dev/sdg"
-  volume_id   = aws_ebs_volume.logs.id
-  instance_id = aws_instance.app_server.id
-}
-
-resource "aws_volume_attachment" "repos" {
-  device_name = "/dev/sdh"
-  volume_id   = aws_ebs_volume.repos.id
-  instance_id = aws_instance.app_server.id
 }

@@ -2,6 +2,7 @@
 variable "aws_region" {
   type = string
   description = "The AWS region to operate against."
+  default = "us-east-1"
 }
 
 variable "aws_profile" {
@@ -11,35 +12,31 @@ variable "aws_profile" {
 
 variable "availability_zone" {
   type = string
-  default = null
-  description = "The availability zone for the build farm."
+  description = "The Availability Zone to deploy into."
+  default = "us-east-1a"
 }
 
 variable "deployment_name" {
   type = string
-  description = "The name for this deployment."
+  description = "The name for this deployment which also defines the DNS prefix."
 }
 
-variable "ssh_public_key" {
+variable "ssh_public_key_file" {
   type = string
   description = "The public key contents."
-}
-
-variable "vpc_cidr_range" {
-  type = string
-  description = "The CIDR Range for the Whole VPC."
-  default = "10.0.0.0/16"
+  default = "ssh_key.pub"
 }
 
 variable "ami" {
   description = "The AMI for the instance. Must be an Amazon Linux 2023 or later AMI."
   type = string
+  default = "ami-05ffe3c48a9991133"
 }
 
 variable "instance_type" {
-  description = "The default machine type."
+  description = "The machine type."
   type = string
-  default = "m6a.xlarge"
+  default = "t3.micro"
 }
 
 variable "root_block_device_size" {

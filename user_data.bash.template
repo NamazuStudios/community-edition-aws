@@ -1,24 +1,34 @@
-#!/bin/bash
-set -eux
+#!/usr/bin/env bash
+set -euxo pipefail
 
-# Variables from Terraform. This script is not meant to be run alone. Rather, it is a template
-# for Terraform. Hence these variables will be hardcoded in the script by Tearraform later. Do
-# not attempt to run this script directly.
+# This script is rendered by Terraform. Do not run directly.
 
 REPO_URL="${repo_url}"
 TAG="${repo_tag}"
-ELEMENTS_CONFIG_SECRET_NAME="${elements_config_secret_name}"
+BASE_URL="${base_url}"
+LOGS_VOLUME_ID="${logs_volume_id}"
+REPOS_VOLUME_ID="${repos_volume_id}"
+DB_DATA_VOLUME_ID="${db_data_volume_id}"
+
+echo "Installing Elements $${TAG} from $${REPO_URL}"
 
 # Make mount points
-mkdir -p /mnt/db_data
-mkdir -p /mnt/logs
-mkdir -p /mnt/repos
+mkdir -p /mnt/db_data /mnt/logs /mnt/repos
 
 # Update packages
 dnf update -y
 
-# Install Docker and Compose v2
-dnf install -y docker docker-compose-plugin git awscli
+# Add repository for Docker
+dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+# Install packages
+dnf install -y docker git awscli
+
+# Install Docker Compose plugin
+mkdir -p /usr/libexec/docker/cli-plugins
+curl -SL "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64" \
+  -o /usr/libexec/docker/cli-plugins/docker-compose
+chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 
 # Start Docker and enable on boot
 systemctl enable --now docker
@@ -26,41 +36,69 @@ systemctl enable --now docker
 # Add ec2-user to the docker group
 usermod -aG docker ec2-user
 
-# Verify Docker Compose
+# Verify Docker Compose installation
 docker compose version
 
-# Format and mount /dev/xvdf for DB data
-if ! blkid /dev/xvdf; then
-  mkfs.ext4 /dev/xvdf
-fi
-mount /dev/xvdf /mnt/db_data
-echo '/dev/xvdf /mnt/db_data ext4 defaults,nofail 0 2' >> /etc/fstab
+# Define mapping of volume IDs to mount points (stripping the dash)
 
-# Format and mount /dev/xvdg for logs
-if ! blkid /dev/xvdg; then
-  mkfs.ext4 /dev/xvdg
-fi
-mount /dev/xvdg /mnt/logs
-echo '/dev/xvdg /mnt/logs ext4 defaults,nofail 0 2' >> /etc/fstab
+declare -A VOLUME_MOUNTS=(
+  ["$${LOGS_VOLUME_ID/vol-/vol}"]="/mnt/logs"
+  ["$${REPOS_VOLUME_ID/vol-/vol}"]="/mnt/repos"
+  ["$${DB_DATA_VOLUME_ID/vol-/vol}"]="/mnt/db_data"
+)
 
-# Format and mount /dev/xvdh for repositories
-if ! blkid /dev/xvdh; then
-  mkfs.ext4 /dev/xvdh
-fi
-mount /dev/xvdh /mnt/repos
-echo '/dev/xvdh /mnt/repos ext4 defaults,nofail 0 2' >> /etc/fstab
+for volid in "$${!VOLUME_MOUNTS[@]}"; do
 
-# Clone the specified tag from Git
-git clone --branch "$TAG" --single-branch "$REPO_URL" /opt/elements
+  # Find the device path for this volume ID
+  device="/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_$${volid}"
+
+  echo "Setting up device: $device"
+
+  # Wait for device to be ready
+  while [ ! -b "$device" ]; do
+    echo "Waiting for $device to appear..."
+    sleep 1
+  done
+
+  # Format if needed
+  if ! blkid "$device"; then
+    echo "Formatting $device..."
+    mkfs.ext4 "$device"
+  fi
+
+  # Create mount point
+  mkdir -p "$${VOLUME_MOUNTS[$volid]}"
+
+  # Mount
+  mount "$device" "$${VOLUME_MOUNTS[$volid]}"
+
+  # Add to fstab
+  echo "$device $${VOLUME_MOUNTS[$volid]} ext4 defaults,nofail 0 2" >> /etc/fstab
+done
+
+# Clone the specified tag/branch/commit from Git
+git clone "$REPO_URL" /opt/elements
+git -C /opt/elements checkout "$TAG"
 
 # Create the config directory
 mkdir -p /opt/elements/config
 
-# Retrieve the AWS secret and save it
-aws secretsmanager get-secret-value \
-  --secret-id "$ELEMENTS_CONFIG_SECRET_NAME" \
-  --query SecretString \
-  --output text > /opt/elements/config/elements.properties
+# Configure the Elements application
+cat >/opt/elements/config/elements.properties <<EOF
+dev.getelements.elements.mongo.uri=mongodb://mongo:27017
+dev.getelements.elements.cors.allowed.origins=${base_url}
+dev.getelements.elements.doc.url=${base_url}/doc
+dev.getelements.elements.api.url=${base_url}/api/rest
+dev.getelements.elements.code.serve.url=${base_url}/code
+dev.getelements.elements.http.tunnel.url=${base_url}/app
+EOF
+
+# Create an environment file for Elements
+cat >/opt/elements/.env <<EOF
+WS_LOG_DIR=/mnt/logs
+WS_REPO_DIR=/mnt/repos
+DB_HOST_DIR=/mnt/db_data
+EOF
 
 # Ensure start/stop scripts are executable
 chmod +x /opt/elements/start-demon.bash
@@ -79,7 +117,7 @@ User=ec2-user
 WorkingDirectory=/opt/elements
 ExecStart=/opt/elements/start-demon.bash
 ExecStop=/opt/elements/stop-demon.bash
-Restart=always
+Restart=on-failure
 RestartSec=5
 
 [Install]
