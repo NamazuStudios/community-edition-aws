@@ -34,7 +34,7 @@ resource "aws_lb_target_group" "app_tg" {
   vpc_id   = data.aws_vpc.default.id
 
   health_check {
-    path                = "/"
+    path                = "/api/rest/version"
     protocol            = "HTTP"
     matcher             = "200-399"
     interval            = 30

@@ -28,6 +28,14 @@ resource "aws_security_group" "app_server" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  ingress {
+    description      = "Allow ALB to communicate on HTTP/8080"
+    from_port        = 8080
+    to_port          = 8080
+    protocol         = "tcp"
+    security_groups  = [aws_security_group.alb_sg.id]
+  }
+
 }
 
 resource "aws_instance" "app_server" {
