@@ -201,7 +201,6 @@ hosted_zone_name   = "example.com"
 | `hosted_zone_name`           | string | *n/a*                                                   | The domain name of the Hosted Zone (e.g., example.com).        |
 | `repo_tag`                   | string | `"3.2.0-deployment"`                                    | Git tag to check out.                                          |
 | `repo_url`                   | string | `"https://github.com/NamazuStudios/docker-compose.git"` | Git repo URL.                                                  |
-| `prevent_volume_destruction` | bool   | `true`                                                  | If true, prevents the destruction of the volumes.              |
 
 
 ## 🌐 Accessing the Application
