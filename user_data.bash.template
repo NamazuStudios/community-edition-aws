@@ -13,8 +13,8 @@ DB_DATA_VOLUME_ID="${db_data_volume_id}"
 echo "Installing Elements $${TAG} from $${REPO_URL}"
 
 # Createst groups and users for elements
-groupadd --system elements
-useradd --home-dir /opt/elements --system --gid elements --shell /sbin/nologin --no-create-home elements
+groupadd -g 10000 --system elements
+useradd -u 10000 --home-dir /opt/elements --system --gid elements --shell /sbin/nologin --no-create-home elements
 
 # Make mount points
 mkdir -p /mnt/db_data /mnt/logs /mnt/repos
@@ -85,15 +85,12 @@ done
 git clone "$REPO_URL" /opt/elements
 git -C /opt/elements checkout "$TAG"
 
-# Create the config directory
-mkdir -p /opt/elements/config
-
 # Sets all ownership such that the new user may access it
 chown -R elements:elements /opt/elements
 chown -R elements:elements /mnt/logs /mnt/repos /mnt/db_data
 
 # Configure the Elements application
-cat >/opt/elements/config/elements.properties <<EOF
+cat >/opt/elements/volume/ws/conf/elements.properties <<EOF
 dev.getelements.elements.mongo.uri=mongodb://mongo:27017
 dev.getelements.elements.cors.allowed.origins=${base_url}
 dev.getelements.elements.doc.url=${base_url}/doc
