@@ -1,0 +1,92 @@
+#!/bin/bash
+set -eux
+
+# Variables from Terraform. This script is not meant to be run alone. Rather, it is a template
+# for Terraform. Hence these variables will be hardcoded in the script by Tearraform later. Do
+# not attempt to run this script directly.
+
+REPO_URL="${repo_url}"
+TAG="${repo_tag}"
+ELEMENTS_CONFIG_SECRET_NAME="${elements_config_secret_name}"
+
+# Make mount points
+mkdir -p /mnt/db_data
+mkdir -p /mnt/logs
+mkdir -p /mnt/repos
+
+# Update packages
+dnf update -y
+
+# Install Docker and Compose v2
+dnf install -y docker docker-compose-plugin git awscli
+
+# Start Docker and enable on boot
+systemctl enable --now docker
+
+# Add ec2-user to the docker group
+usermod -aG docker ec2-user
+
+# Verify Docker Compose
+docker compose version
+
+# Format and mount /dev/xvdf for DB data
+if ! blkid /dev/xvdf; then
+  mkfs.ext4 /dev/xvdf
+fi
+mount /dev/xvdf /mnt/db_data
+echo '/dev/xvdf /mnt/db_data ext4 defaults,nofail 0 2' >> /etc/fstab
+
+# Format and mount /dev/xvdg for logs
+if ! blkid /dev/xvdg; then
+  mkfs.ext4 /dev/xvdg
+fi
+mount /dev/xvdg /mnt/logs
+echo '/dev/xvdg /mnt/logs ext4 defaults,nofail 0 2' >> /etc/fstab
+
+# Format and mount /dev/xvdh for repositories
+if ! blkid /dev/xvdh; then
+  mkfs.ext4 /dev/xvdh
+fi
+mount /dev/xvdh /mnt/repos
+echo '/dev/xvdh /mnt/repos ext4 defaults,nofail 0 2' >> /etc/fstab
+
+# Clone the specified tag from Git
+git clone --branch "$TAG" --single-branch "$REPO_URL" /opt/elements
+
+# Create the config directory
+mkdir -p /opt/elements/config
+
+# Retrieve the AWS secret and save it
+aws secretsmanager get-secret-value \
+  --secret-id "$ELEMENTS_CONFIG_SECRET_NAME" \
+  --query SecretString \
+  --output text > /opt/elements/config/elements.properties
+
+# Ensure start/stop scripts are executable
+chmod +x /opt/elements/start-demon.bash
+chmod +x /opt/elements/stop-demon.bash
+
+# Create a systemd service to manage the daemon
+cat >/etc/systemd/system/elements.service <<EOF
+[Unit]
+Description=Elements Docker Compose Daemon
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/elements
+ExecStart=/opt/elements/start-demon.bash
+ExecStop=/opt/elements/stop-demon.bash
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and start the service
+systemctl daemon-reload
+systemctl enable elements.service
+systemctl start elements.service
