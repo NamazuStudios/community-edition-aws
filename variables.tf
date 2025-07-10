@@ -75,7 +75,7 @@ variable "hosted_zone_name" {
 
 variable "repo_tag" {
   description = "Git tag to check out."
-  default     = "3.2.0-deployment"
+  default     = "3.2.0"
 }
 
 variable "repo_url" {

@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # 📘 Elements Community Edition on AWS - Terraform Deployment
 
 This project deploys **Elements Community Edition** on AWS using Terraform and Docker Compose.
@@ -310,3 +309,4 @@ To fix this you must create a VPC:
 ```bash
 aws ec2 create-default-vpc
 ```
+
