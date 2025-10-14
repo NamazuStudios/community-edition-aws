@@ -25,7 +25,8 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 
 # Attach read-only SecretsManager permissions
 resource "aws_iam_policy" "secrets_policy" {
-  name = "secrets-readonly"
+
+  name = "${var.deployment_name}-secrets-readonly"
 
   policy = jsonencode({
     Version = "2012-10-17"
