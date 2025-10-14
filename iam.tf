@@ -51,6 +51,6 @@ resource "aws_iam_policy_attachment" "secrets_attach" {
 }
 
 resource "aws_iam_instance_profile" "app_server" {
-  name = "ec2-instance-profile"
+  name = "${var.deployment_name}-ec2-instance-profile"
   role = aws_iam_role.ec2_role.name
 }
