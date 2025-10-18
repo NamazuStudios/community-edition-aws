@@ -7,6 +7,7 @@ locals {
     logs_volume_id    = aws_ebs_volume.logs.id
     repos_volume_id   = aws_ebs_volume.repos.id
     db_data_volume_id = aws_ebs_volume.db_data.id
+    docker_image_version = var.docker_image_version
   })
 }
 

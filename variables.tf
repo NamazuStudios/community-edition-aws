@@ -82,3 +82,8 @@ variable "repo_url" {
   description = "Git repo URL"
   default     = "https://github.com/NamazuStudios/docker-compose.git"
 }
+
+variable "docker_image_version" {
+  description = "Git tag to check out."
+  default     = "3.3.11"
+}

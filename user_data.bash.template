@@ -9,6 +9,7 @@ BASE_URL="${base_url}"
 LOGS_VOLUME_ID="${logs_volume_id}"
 REPOS_VOLUME_ID="${repos_volume_id}"
 DB_DATA_VOLUME_ID="${db_data_volume_id}"
+DOCKER_IMAGE_VERSION="${docker_image_version}"
 
 echo "Installing Elements $${TAG} from $${REPO_URL}"
 
@@ -121,6 +122,13 @@ Requires=docker.service
 Type=simple
 User=elements
 Group=elements
+Environment=TAG=${DOCKER_IMAGE_VERSION}
+Environment=dev_getelements_elements_app_url=${base_url}
+Environment=dev_getelements_elements_api_url=${base_url}/api/rest
+Environment=dev_getelements_elements_doc_url=${base_url}/doc
+Environment=dev_getelements_elements_cdn_url=${base_url}/cdn
+Environment=dev_getelements_elements_code_serve_url=${base_url}/code
+Environment=dev_getelements_elements_http_tunnel_url=${base_url}/app
 WorkingDirectory=/opt/elements
 ExecStart=/opt/elements/start-demon.bash
 ExecStop=/opt/elements/stop-demon.bash
