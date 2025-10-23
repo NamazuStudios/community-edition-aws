@@ -12,13 +12,13 @@ locals {
   }
 
   default_elements_properties = {
-    dev.getelements.elements.mongo.uri="mongodb://mongo:27017"
-    dev.getelements.elements.app.url=local.base_url
-    dev.getelements.elements.doc.url="${local.base_url}/doc"
-    dev.getelements.elements.api.url="${local.base_url}/api/rest"
-    dev.getelements.elements.code.serve.url="${local.base_url}/code"
-    dev.getelements.elements.http.tunnel.url="${local.base_url}/app/rest"
-    dev.getelements.elements.cors.allowed.origins=local.base_url
+    "dev.getelements.elements.mongo.uri"="mongodb://mongo:27017"
+    "dev.getelements.elements.app.url"=local.base_url
+    "dev.getelements.elements.doc.url"="${local.base_url}/doc"
+    "dev.getelements.elements.api.url"="${local.base_url}/api/rest"
+    "dev.getelements.elements.code.serve.url"="${local.base_url}/code"
+    "dev.getelements.elements.http.tunnel.url"="${local.base_url}/app/rest"
+    "dev.getelements.elements.cors.allowed.origins"=local.base_url
   }
 
   docker_environment_file = join("\n", [
