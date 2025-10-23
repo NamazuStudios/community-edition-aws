@@ -1,5 +1,34 @@
 
 locals {
+
+  base_url = "https://${var.deployment_name}.${var.hosted_zone_name}"
+
+  default_docker_environment = {
+    TAG=var.docker_image_version
+    WS_LOG_DIR="/mnt/logs"
+    DB_HOST_DIR="/mnt/db_data"
+    CDN_REPOS_DIR="/mnt/repos/cdn"
+    SCRIPT_REPOS_DIR="/mnt/repos/script"
+  }
+
+  default_elements_properties = {
+    dev.getelements.elements.mongo.uri="mongodb://mongo:27017"
+    dev.getelements.elements.app.url=local.base_url
+    dev.getelements.elements.doc.url="${local.base_url}/doc"
+    dev.getelements.elements.api.url="${local.base_url}/api/rest"
+    dev.getelements.elements.code.serve.url="${local.base_url}/code"
+    dev.getelements.elements.http.tunnel.url="${local.base_url}/app/rest"
+    dev.getelements.elements.cors.allowed.origins=local.base_url
+  }
+
+  docker_environment_file = join("\n", [
+    for key, value in merge(local.default_docker_environment, var.docker_environment) : "${key}=${value}"
+  ])
+
+  elements_properties_file = join("\n", [
+    for key, value in merge(local.default_elements_properties, var.elements_properties) : "${key}=${value}"
+  ])
+
   user_data = templatefile("${path.module}/user_data.bash.template", {
     repo_url    = var.repo_url
     repo_tag    = var.repo_tag
@@ -7,7 +36,8 @@ locals {
     logs_volume_id    = aws_ebs_volume.logs.id
     repos_volume_id   = aws_ebs_volume.repos.id
     db_data_volume_id = aws_ebs_volume.db_data.id
-    docker_image_version = var.docker_image_version
+    docker_environment    = local.docker_environment_file
+    elements_properties   = local.elements_properties_file
   })
 }
 

@@ -87,3 +87,15 @@ variable "docker_image_version" {
   description = "Git tag to check out."
   default     = "3.3.11"
 }
+
+variable docker_environment {
+  description = "Specifies additional environment variables. Overrides default settings."
+  type = map(string)
+  default = {}
+}
+
+variable elements_properties {
+  description = "Specifies configuration variables for Namazu Elements. Overrides default settings."
+  type = map(string)
+  default = {}
+}
