@@ -114,16 +114,6 @@ Requires=docker.service
 Type=simple
 User=elements
 Group=elements
-<<<<<<< HEAD
-Environment=TAG=${docker_image_version}
-Environment=dev_getelements_elements_app_url=${base_url}
-Environment=dev_getelements_elements_api_url=${base_url}/api/rest
-Environment=dev_getelements_elements_doc_url=${base_url}/doc
-Environment=dev_getelements_elements_cdn_url=${base_url}/cdn
-Environment=dev_getelements_elements_code_serve_url=${base_url}/code
-Environment=dev_getelements_elements_http_tunnel_url=${base_url}/app
-=======
->>>>>>> 2437054 (Reworked configuration and added more variables as well as customized)
 WorkingDirectory=/opt/elements
 ExecStart=/opt/elements/start-demon.bash
 ExecStop=/opt/elements/stop-demon.bash
