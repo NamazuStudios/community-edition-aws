@@ -84,7 +84,7 @@ variable "repo_url" {
 }
 
 variable "docker_image_version" {
-  description = "Git tag to check out."
+  description = "The Docker image version to run."
   default     = "3.3.11"
 }
 
