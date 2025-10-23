@@ -85,6 +85,9 @@ done
 git clone "$REPO_URL" /opt/elements
 git -C /opt/elements checkout "$TAG"
 
+# Makes directories for the script and CDN repositorires
+mkdir -p /mnt/repos/script /mnt/repos/cdn
+
 # Sets all ownership such that the new user may access it
 chown -R elements:elements /opt/elements
 chown -R elements:elements /mnt/logs /mnt/repos /mnt/db_data
